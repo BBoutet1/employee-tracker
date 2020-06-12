@@ -21,7 +21,7 @@ connection.connect(function(err) {
     manageEmployees();
 });
 // Answers to the first inquirer question
-whatToDo = ["View all employees", "View all employees by department",
+actionToDo = ["View all employees", "View all employees by department",
     "View all employees by manager", "Add employee", "Remove employee",
     "Update employee role", "Update employee Manager", "Add role", "Add department",
 ];
@@ -31,32 +31,49 @@ function manageEmployees() {
     inquirer
         .prompt([{
             message: "What would you like to do?",
-            name: "doWhat",
+            name: "action",
             type: "list",
-            choices: whatToDo,
+            choices: actionToDo,
         }])
         .then(function(answer) {
-            if (answer.doWhat === whatToDo[0]) {
-                viewEmployees();
-            } else if (answer.doWhat === whatToDo[1]) {
-                EmployeesbyDepatment();
-            } else if (answer.doWhat === whatToDo[2]) {
-                EmployeesbyManager();
-            } else if (answer.doWhat === whatToDo[3]) {
-                addEmployee();
-            } else if (answer.doWhat === whatToDo[4]) {
-                removeEmployee();
-            } else if (answer.doWhat === whatToDo[5]) {
-                updateRole();
-            } else if (answer.doWhat === whatToDo[6]) {
-                updateManager();
-            } else if (answer.doWhat === whatToDo[7]) {
-                addRole();
-            } else if (answer.doWhat === whatToDo[6]) {
-                addDepartment();
+            switch (answer.action) {
+                case actionToDo[0]:
+                    viewEmployees();
+                    break;
+
+                case actionToDo[1]:
+                    employeesbyDepatment();
+                    break;
+
+                case actionToDo[2]:
+                    employeesbyManager();
+                    break;
+
+                case actionToDo[3]:
+                    addEmployee();
+                    break;
+                case actionToDo[4]:
+                    removeEmployee();
+                    break;
+
+                case actionToDo[5]:
+                    updateRole();
+                    break;
+                case actionToDo[6]:
+                    updateRole();
+                    break;
+                case actionToDo[6]:
+                    addRole();
+                    break;
+                case actionToDo[6]:
+                    addDepartment();
+                    break;
             }
 
         });
+
+
+
 
     function viewEmployees() {
         connection.query("SELECT * FROM employee", function(err, res) {
@@ -64,6 +81,28 @@ function manageEmployees() {
             console.log(res);
             connection.end();
         });
+    }
+
+    function employeesbyDepatment() {
+
+        inquirer
+            .prompt({
+                name: "department",
+                type: "input",
+                message: "Which department employee would do like to see?"
+            })
+            .then(function(answer) {
+                var query = "SELECT employee.first_name, employee.last_name ";
+                query += "FROM employee INNER JOIN role ON (employee.role_id = role.id) INNER JOIN department ON (role.department_id = department.id) ";
+                query += "WHERE department.name = ?";
+
+                connection.query(query, answer.department, function(err, res) {
+                    if (err) throw err;
+                    console.log(res.length + " matches found!");
+                    console.log(res);
+                    connection.end();
+                });
+            });
     }
 
 
