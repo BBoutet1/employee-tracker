@@ -43,7 +43,7 @@ function manageEmployees() {
             switch (answer.action) {
                 case actionToDo[0]:
                     //Display all employees
-                    viewEmployees();
+                    viewAllEmployees();
                     break;
 
                 case actionToDo[1]:
@@ -61,7 +61,11 @@ function manageEmployees() {
                     viewEmployeesBy("manager", function(res) {
                         let managerIDs = []; // manager ID for each employee
                         res.forEach(employee => managerIDs.push(employee.manager_id));
-                        managerIDs = Array.from(new Set(managerIDs)); // removing duplicates IDs
+                        // managerIDs = Array.from(new Set(managerIDs)); // removing duplicates IDs
+                        managerIDs.sort(function(a, b) { //sorting the manager IDs
+                            return a - b;
+                        });
+                        console.log(managerIDs);
                         //Calling the function to select the manager and display employees
                         employeesByManager(managerIDs)
                     });
@@ -99,7 +103,7 @@ function manageEmployees() {
             query = "SELECT department.id, department.name FROM department";
         } else if (param === "manager") {
             //Getting all employees manager ids (duplicates to be removed later)
-            query = "SELECT * FROM employee";
+            query = "SELECT DISTINCT employee.manager_id FROM employee";
         }
         connection.query(query, function(err, res) {
             if (err) throw err;
@@ -107,12 +111,30 @@ function manageEmployees() {
         });
     }
 
-    function viewEmployees() {
-        connection.query("SELECT * FROM employee", function(err, res) {
+    function viewAllEmployees() {
+        let query = "SELECT employee.*, role.title AS role, department.name AS department, role.salary ";
+        query += "FROM employee INNER JOIN role ON (employee.role_id = role.id) INNER JOIN department ON (role.department_id = department.id) ";
+        connection.query(query, function(err, res) {
             if (err) throw err;
-            console.log("----------------------------------------")
-            console.table(res);
-            manageEmployees();
+            const employees = res;
+            //For each employee, loop to find the manager (the one the manager id belong to)
+            res.forEach(element => {
+                employees.forEach(elmt => {
+                    if (element.manager_id === elmt.id) {
+                        //Manager found
+                        element.manager = `${elmt.first_name} ${elmt.last_name}`;
+                        delete element.manager_id; // no more needed when manager found
+                        delete element.role_id;
+                    }
+                })
+            });
+
+            setTimeout(function getEmployeesData() {
+                console.log("------------------------------------------------------------------------------")
+                console.table(res);
+                manageEmployees();
+            }, 500)
+
         });
     }
 
@@ -126,7 +148,7 @@ function manageEmployees() {
                 choices: departmentsList
             })
             .then(function(answer) {
-                let query = "SELECT employee.id, employee.first_name, employee.last_name ";
+                let query = "SELECT employee.id, employee.first_name, employee.last_name";
                 query += "FROM employee INNER JOIN role ON (employee.role_id = role.id) INNER JOIN department ON (role.department_id = department.id) ";
                 query += "WHERE department.name = ?";
                 connection.query(query, answer.department, function(err, res) {
