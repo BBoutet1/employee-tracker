@@ -1,3 +1,4 @@
+//npm modules
 var mysql = require("mysql");
 var inquirer = require("inquirer");
 
@@ -7,24 +8,20 @@ var connection = mysql.createConnection({
     // Your port; if not 3306
     port: 3306,
 
-    // Your username
+    // squl user name
     user: "root",
 
-    // Your password
+    //sql passeword
     password: "",
     database: "employeesDB"
 });
 
+//Connection to sql database
 connection.connect(function(err) {
     if (err) throw err;
-    console.log("connected as id " + connection.threadId);
+    //Calling the inquirers functions
     manageEmployees();
 });
-
-// Global variable;
-let departmentsList = [];
-let managersList = [];
-let rolesList = [];
 
 // Answers to the first inquirer question
 actionToDo = ["View all employees", "View all employees by department",
@@ -32,7 +29,7 @@ actionToDo = ["View all employees", "View all employees by department",
     "Update employee role", "Update employee Manager", "Add role", "Add department",
 ];
 
-
+//Global functions to start prompts questions
 function manageEmployees() {
     inquirer
         .prompt([{
@@ -44,20 +41,31 @@ function manageEmployees() {
         .then(function(answer) {
             switch (answer.action) {
                 case actionToDo[0]:
+                    //Display all employees
                     viewEmployees();
                     break;
 
                 case actionToDo[1]:
+                    //Display employees by department
                     viewEmployeesBy("department", function(res) {
-                        res.forEach(department => departmentsList.push(department.name));
-                        employeesByDepatment(departmentsList)
+                        console.log("dptmt " + res);
+                        const departmentsList = res;
+                        console.log("dptmt " + departmentsList);
+                        //Calling the function to select the department and display employees
+                        employeesByDepartment(departmentsList)
                     });
                     break;
 
                 case actionToDo[2]:
-                    employeesbyManager();
+                    //Display employees by manager
+                    viewEmployeesBy("manager", function(res) {
+                        let managerIDs = []; // manager ID for each employee
+                        res.forEach(employee => managerIDs.push(employee.manager_id));
+                        managerIDs = Array.from(new Set(managerIDs)); // removing duplicates IDs
+                        //Calling the function to select the manager and display employees
+                        employeesByManager(managerIDs)
+                    });
                     break;
-
                 case actionToDo[3]:
                     addEmployee();
                     break;
@@ -80,12 +88,19 @@ function manageEmployees() {
             }
 
         });
-    //A function to return an array listing departments, managers or roles
+    //A function to return an array listing departments or managers ids
     function viewEmployeesBy(param, getTable) {
-        //Database query to get all departments names
-        connection.query("SELECT * FROM " + param, function(err, res) {
+        //Database query
+        let query = ""
+        if (param === "department") {
+            //Getting all deparment names
+            query = "SELECT * FROM department";
+        } else if (param === "manager") {
+            //Getting all employees manager ids (duplicates to be removed later)
+            query = "SELECT * FROM employee";
+        }
+        connection.query(query, function(err, res) {
             if (err) throw err;
-            // deparmentsList = res;
             return getTable(res)
         });
     }
@@ -98,16 +113,16 @@ function manageEmployees() {
         });
     }
 
-    function employeesByDepatment(departmentsList) {;
+    function employeesByDepartment(departmentsList) {;
         inquirer
             .prompt({
-                message: "Which department employee would do like to see?",
+                message: "Which department team would do like to see?",
                 name: "department",
                 type: "list",
                 choices: departmentsList
             })
             .then(function(answer) {
-                let query = "SELECT employee.first_name, employee.last_name ";
+                let query = "SELECT employee.id, employee.first_name, employee.last_name ";
                 query += "FROM employee INNER JOIN role ON (employee.role_id = role.id) INNER JOIN department ON (role.department_id = department.id) ";
                 query += "WHERE department.name = ?";
                 connection.query(query, answer.department, function(err, res) {
@@ -118,5 +133,26 @@ function manageEmployees() {
                 });
             });
     }
+
+    // function employeesByManager(managersList) {;
+    //     inquirer
+    //         .prompt({
+    //             message: "Which manager team would do like to see?",
+    //             name: "department",
+    //             type: "list",
+    //             choices: managersList
+    //         })
+    //         .then(function(answer) {
+    //             let query = "SELECT employee.id, employee.first_name, employee.last_name ";
+    //             query += "FROM employee INNER JOIN role ON (employee.role_id = role.id) INNER JOIN department ON (role.department_id = department.id) ";
+    //             query += "WHERE department.name = ?";
+    //             connection.query(query, answer.department, function(err, res) {
+    //                 if (err) throw err;
+    //                 console.log(res.length + " matches found!");
+    //                 console.log(res);
+    //                 connection.end();
+    //             });
+    //         });
+    // }
 
 }
