@@ -49,9 +49,9 @@ function manageEmployees() {
                 case actionToDo[1]:
                     //Display employees by department
                     viewEmployeesBy("department", function(res) {
-                        console.log("dptmt " + res);
-                        const departmentsList = res;
-                        //Calling the function to select the department and display employees
+                        const departmentsList = [];
+                        res.forEach(department => departmentsList.push(`${department.id}  ${department.name}`))
+                            //Calling the function to select the department and display employees
                         employeesByDepartment(departmentsList)
                     });
                     break;
@@ -65,7 +65,7 @@ function manageEmployees() {
                         managerIDs.sort(function(a, b) { //sorting the manager IDs
                             return a - b;
                         });
-                        console.log(managerIDs);
+                        console.log("managers id" + managerIDs);
                         //Calling the function to select the manager and display employees
                         employeesByManager(managerIDs)
                     });
@@ -94,68 +94,39 @@ function manageEmployees() {
                     return
             }
         });
-    //A function to return an array listing departments or managers ids
-    function viewEmployeesBy(param, getTable) {
-        //Database query
-        let query = ""
-        if (param === "department") {
-            //Getting all deparment names
-            query = "SELECT department.id, department.name FROM department";
-        } else if (param === "manager") {
-            //Getting all employees manager ids (duplicates to be removed later)
-            query = "SELECT DISTINCT employee.manager_id FROM employee";
-        }
-        connection.query(query, function(err, res) {
-            if (err) throw err;
-            return getTable(res)
-        });
-    }
 
+    //This function query and print all employees data
     function viewAllEmployees() {
-        let query = "SELECT employee.*, role.title AS role, department.name AS department, role.salary ";
-        query += "FROM employee INNER JOIN role ON (employee.role_id = role.id) INNER JOIN department ON (role.department_id = department.id) ";
+        let query = "";
+        //Preparing the query
+        query = mainQuery(query)
         connection.query(query, function(err, res) {
             if (err) throw err;
-            const employees = res;
-            //For each employee, loop to find the manager (the one the manager id belong to)
-            res.forEach(element => {
-                employees.forEach(elmt => {
-                    if (element.manager_id === elmt.id) {
-                        //Manager found
-                        element.manager = `${elmt.first_name} ${elmt.last_name}`;
-                        delete element.manager_id; // no more needed when manager found
-                        delete element.role_id;
-                    }
-                })
-            });
-
-            setTimeout(function getEmployeesData() {
-                console.log("------------------------------------------------------------------------------")
-                console.table(res);
-                manageEmployees();
-            }, 500)
-
+            //Maing and processing the the query response
+            processResult(res)
         });
     }
 
     function employeesByDepartment(departmentsList) {;
         inquirer
             .prompt({
-
                 message: "Which department team would do like to see?",
                 name: "department",
                 type: "list",
                 choices: departmentsList
             })
             .then(function(answer) {
-                let query = "SELECT employee.id, employee.first_name, employee.last_name";
-                query += "FROM employee INNER JOIN role ON (employee.role_id = role.id) INNER JOIN department ON (role.department_id = department.id) ";
-                query += "WHERE department.name = ?";
-                connection.query(query, answer.department, function(err, res) {
+                let query = "";
+                let departmentId = 1;
+                //Preparing the query
+                query = mainQuery(query);
+                //Filtering the departmen
+                departmentId += departmentsList.indexOf(answer.department);
+                query += ` WHERE department.id = ${departmentId}`
+                connection.query(query, function(err, res) {
                     if (err) throw err;
-                    console.log("----------------------------------------")
-                    console.table(res);
-                    manageEmployees();
+                    //Maing and processing the the query response
+                    processResult(res)
                 });
             });
     }
@@ -178,6 +149,54 @@ function manageEmployees() {
                     console.log(res);
                 });
             });
+    }
+    //This function prepare and return the sql database query for all employees data
+    function mainQuery(query) {
+        query = "SELECT employee.*, role.title AS role, department.name AS department, role.salary FROM employee ";
+        query += "INNER JOIN role ON (employee.role_id = role.id) INNER JOIN department ON (role.department_id = department.id) ";
+        return query;
+    }
+
+    //This function make the sql database query and process the response
+    function processResult(res) {
+        const employees = res;
+        //For each employee, loop to find the manager (the one the manager id belong to)
+        res.forEach(element => {
+            employees.forEach(elmt => {
+                if (element.manager_id === elmt.id) {
+                    //Manager found
+                    element.manager = `${elmt.first_name} ${elmt.last_name}`;
+                    delete element.manager_id; // no more needed when manager found
+                    delete element.role_id;
+                }
+            })
+        });
+
+        //This function print employees data
+        setTimeout(function printEmployeesData() {
+            console.log("------------------------------------------------------------------------------")
+            console.table(res);
+            manageEmployees();
+        }, 500)
+
+    }
+
+    //This function prepare and return the inquirer list of choices for employees selection by department or manager
+    function viewEmployeesBy(param, getTable) {
+        //Database query
+        let query = ""
+        if (param === "department") {
+            //Getting all deparment names
+            query = "SELECT * FROM department ORDER BY department.id";
+        } else if (param === "manager") {
+            //Getting all employees manager ids (duplicates to be removed later)
+            query = "SELECT DISTINCT employee.manager_id FROM employee";
+        }
+        connection.query(query, function(err, res) {
+            if (err) throw err;
+            console.log("by department" + JSON.stringify(res))
+            return getTable(res)
+        });
     }
 
 }
