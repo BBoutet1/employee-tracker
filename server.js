@@ -50,8 +50,8 @@ function manageEmployees() {
                     //Display employees by department
                     viewEmployeesBy("department", function(res) {
                         const departmentsList = [];
-                        res.forEach(department => departmentsList.push(`${department.id}  ${department.name}`))
-                            //Calling the function to select the department and display employees
+                        res.forEach(department => departmentsList.push(`${department.id}  ${department.name}`));
+                        //Calling the function to select the department and display employees
                         employeesByDepartment(departmentsList)
                     });
                     break;
@@ -60,14 +60,33 @@ function manageEmployees() {
                     //Display employees by manager
                     viewEmployeesBy("manager", function(res) {
                         let managerIDs = []; // manager ID for each employee
-                        res.forEach(employee => managerIDs.push(employee.manager_id));
-                        // managerIDs = Array.from(new Set(managerIDs)); // removing duplicates IDs
-                        managerIDs.sort(function(a, b) { //sorting the manager IDs
-                            return a - b;
+                        let query = "";
+                        res.forEach(employee => { managerIDs.push(employee.manager_id) });
+                        console.log(res, managerIDs);
+                        query = "SELECT * FROM employee"
+                        managerIDs.forEach(id => {
+                            console.log(id, managerIDs.indexOf(id))
+                            let addManager = " WHERE employee.id = " + id;;
+                            if (managerIDs.indexOf(id) != 0) {
+                                addManager = " AND WHERE employee.id = " + id;
+                            }
                         });
-                        console.log("managers id" + managerIDs);
-                        //Calling the function to select the manager and display employees
-                        employeesByManager(managerIDs)
+                        query += " ORDER BY employee.id";
+                        connection.query(query, function(err, resp) {
+                            if (err) throw err;
+                            const managersList = [];
+                            resp.forEach(employee => {
+                                managerIDs.forEach(id => {
+                                    if (employee.id == id) {
+                                        managersList.push(`${employee.id}  ${employee.first_name} ${employee.last_name}`)
+                                    }
+                                })
+
+                            });
+                            //Calling the function to select the manager and display employees
+                            console.log("my managers " + managersList)
+                            employeesByManager(managersList)
+                        });
                     });
                     break;
                 case actionToDo[3]:
@@ -99,7 +118,7 @@ function manageEmployees() {
     function viewAllEmployees() {
         let query = "";
         //Preparing the query
-        query = mainQuery(query)
+        query = employeesQuery(query)
         connection.query(query, function(err, res) {
             if (err) throw err;
             //Maing and processing the the query response
@@ -119,8 +138,8 @@ function manageEmployees() {
                 let query = "";
                 let departmentId = 1;
                 //Preparing the query
-                query = mainQuery(query);
-                //Filtering the departmen
+                query = employeesQuery(query);
+                //Filtering the department team
                 departmentId += departmentsList.indexOf(answer.department);
                 query += ` WHERE department.id = ${departmentId}`
                 connection.query(query, function(err, res) {
@@ -140,18 +159,22 @@ function manageEmployees() {
                 choices: managersList
             })
             .then(function(answer) {
-                let query = "SELECT employee.id, employee.first_name, employee.last_name ";
-                query += "FROM employee INNER JOIN role ON (employee.role_id = role.id) INNER JOIN department ON (role.department_id = department.id) ";
-                query += "WHERE department.name = ?";
-                connection.query(query, answer.department, function(err, res) {
+                let query = "";
+                let managerId = 1;
+                //Preparing the query
+                query = employeesQuery(query);
+                //Filtering the managerhhh team
+                departmentId += departmentsList.indexOf(answer.department);
+                query += ` WHERE department.id = ${departmentId}`
+                connection.query(query, function(err, res) {
                     if (err) throw err;
-                    console.log(res.length + " matches found!");
-                    console.log(res);
+                    //Maing and processing the the query response
+                    processResult(res)
                 });
             });
     }
     //This function prepare and return the sql database query for all employees data
-    function mainQuery(query) {
+    function employeesQuery(query) {
         query = "SELECT employee.*, role.title AS role, department.name AS department, role.salary FROM employee ";
         query += "INNER JOIN role ON (employee.role_id = role.id) INNER JOIN department ON (role.department_id = department.id) ";
         return query;
@@ -190,11 +213,10 @@ function manageEmployees() {
             query = "SELECT * FROM department ORDER BY department.id";
         } else if (param === "manager") {
             //Getting all employees manager ids (duplicates to be removed later)
-            query = "SELECT DISTINCT employee.manager_id FROM employee";
+            query = "SELECT DISTINCT employee.manager_id FROM employee ORDER BY employee.manager_id";
         }
         connection.query(query, function(err, res) {
             if (err) throw err;
-            console.log("by department" + JSON.stringify(res))
             return getTable(res)
         });
     }
