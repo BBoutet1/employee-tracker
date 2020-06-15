@@ -76,7 +76,7 @@ function manageEmployees() {
                             resp.forEach(employee => {
                                 managerIDs.forEach(id => {
                                     if (employee.id == id) {
-                                        managersList.push(`${employee.id}  ${employee.first_name} ${employee.last_name}`)
+                                        managersList.push(`${employee.id} ${employee.first_name} ${employee.last_name}`)
                                     }
                                 })
                             });
@@ -117,7 +117,7 @@ function manageEmployees() {
         query = employeesQuery(query)
         connection.query(query, function(err, res) {
             if (err) throw err;
-            //Maing and processing the the query response
+            //rocessing the the query response
             processResult(res)
         });
     }
@@ -140,7 +140,7 @@ function manageEmployees() {
                 query += ` WHERE department.id = ${departmentId}`
                 connection.query(query, function(err, res) {
                     if (err) throw err;
-                    //Maing and processing the the query response
+                    //Processing the the query response
                     processResult(res)
                 });
             });
@@ -165,6 +165,10 @@ function manageEmployees() {
                 connection.query(query, function(err, res) {
                     if (err) throw err;
                     //Processing the query response
+                    res.forEach(employee => {
+                        //Manager known
+                        employee.manager = `${answer.manager.split(" ")[1]} ${answer.manager.split(" ")[2]}`;
+                    })
                     processResult(res)
                 });
             });
@@ -178,25 +182,27 @@ function manageEmployees() {
 
     //This function make the sql database query and process the response
     function processResult(res) {
-        const employees = res;
         //For each employee, loop to find the manager (the one the manager id belong to)
         res.forEach(element => {
-            employees.forEach(elmt => {
-                if (element.manager_id === elmt.id) {
+            res.forEach(elmt => {
+                if (element.manager_id == elmt.id) {
                     //Manager found
                     element.manager = `${elmt.first_name} ${elmt.last_name}`;
-                    delete element.manager_id; // no more needed when manager found
-                    delete element.role_id;
                 }
             })
         });
 
         //This function print employees data
         setTimeout(function printEmployeesData() {
-            console.log("------------------------------------------------------------------------------")
+            res.forEach(employee => {
+                delete employee.manager_id; // no more needed when manager found
+                delete employee.role_id;
+            });
+            console.log("-----------------------------------------------------------------------------");
             console.table(res);
             manageEmployees();
-        }, 500)
+            c
+        }, 300)
 
     }
 
