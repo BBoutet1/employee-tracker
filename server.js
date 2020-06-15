@@ -62,10 +62,8 @@ function manageEmployees() {
                         let managerIDs = []; // manager ID for each employee
                         let query = "";
                         res.forEach(employee => { managerIDs.push(employee.manager_id) });
-                        console.log(res, managerIDs);
                         query = "SELECT * FROM employee"
                         managerIDs.forEach(id => {
-                            console.log(id, managerIDs.indexOf(id))
                             let addManager = " WHERE employee.id = " + id;;
                             if (managerIDs.indexOf(id) != 0) {
                                 addManager = " AND WHERE employee.id = " + id;
@@ -81,10 +79,8 @@ function manageEmployees() {
                                         managersList.push(`${employee.id}  ${employee.first_name} ${employee.last_name}`)
                                     }
                                 })
-
                             });
                             //Calling the function to select the manager and display employees
-                            console.log("my managers " + managersList)
                             employeesByManager(managersList)
                         });
                     });
@@ -154,21 +150,21 @@ function manageEmployees() {
         inquirer
             .prompt({
                 message: "Which manager team would do like to see?",
-                name: "department",
+                name: "manager",
                 type: "list",
                 choices: managersList
             })
             .then(function(answer) {
                 let query = "";
-                let managerId = 1;
-                //Preparing the query
+                //Getting the manager employee id
+                let managerId = answer.manager.split(" ")[0];
+                //Query for all employees
                 query = employeesQuery(query);
-                //Filtering the managerhhh team
-                departmentId += departmentsList.indexOf(answer.department);
-                query += ` WHERE department.id = ${departmentId}`
+                //Adding the manager id filter in the query
+                query += ` WHERE employee.manager_id = ${managerId}`
                 connection.query(query, function(err, res) {
                     if (err) throw err;
-                    //Maing and processing the the query response
+                    //Processing the query response
                     processResult(res)
                 });
             });
