@@ -86,7 +86,13 @@ function manageEmployees() {
                     });
                     break;
                 case actionToDo[3]:
-                    addEmployee();
+                    //Display employees by department
+                    newEmployee(function(res) {
+                        const rolesList = [];
+                        res.forEach(role => rolesList.push(`${role.id}  ${role.title}`));
+                        //Calling the function to select the department and display employees
+                        addEmployee(rolesList)
+                    });
                     break;
                 case actionToDo[4]:
                     removeEmployee();
@@ -173,6 +179,43 @@ function manageEmployees() {
                 });
             });
     }
+
+    function addEmployee(rolesList) {;
+        inquirer
+            .prompt([{
+                name: "first_name",
+                type: "input",
+                message: "Enter the employee first name:"
+            }, {
+                name: "last_name",
+                type: "input",
+                message: "Enter the employee last name:"
+            }, {
+                message: "Choose the employee role:",
+                name: "manager",
+                type: "list",
+                choices: rolesList
+            }])
+            .then(function(answer) {
+                // let query = "";
+                // //Getting the manager employee id
+                // let managerId = answer.manager.split(" ")[0];
+                // //Query for all employees
+                // query = employeesQuery(query);
+                // //Adding the manager id filter in the query
+                // query += ` WHERE employee.manager_id = ${managerId}`
+                // connection.query(query, function(err, res) {
+                //     if (err) throw err;
+                //     //Processing the query response
+                //     res.forEach(employee => {
+                //         //Manager known
+                //         employee.manager = `${answer.manager.split(" ")[1]} ${answer.manager.split(" ")[2]}`;
+                //     })
+                //     processResult(res)
+                // });
+            });
+    }
+
     //This function prepare and return the sql database query for all employees data
     function employeesQuery(query) {
         query = "SELECT employee.*, role.title AS role, department.name AS department, role.salary FROM employee ";
@@ -201,7 +244,6 @@ function manageEmployees() {
             console.log("-----------------------------------------------------------------------------");
             console.table(res);
             manageEmployees();
-            c
         }, 300)
 
     }
@@ -220,6 +262,15 @@ function manageEmployees() {
         connection.query(query, function(err, res) {
             if (err) throw err;
             return getTable(res)
+        });
+    }
+
+    function newEmployee(getRole) {
+        //Database query
+        let query = "SELECT * FROM role";
+        connection.query(query, function(err, res) {
+            if (err) throw err;
+            return getRole(res)
         });
     }
 
