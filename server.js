@@ -87,21 +87,26 @@ function manageEmployees() {
                     });
                     break;
                 case actionToDo[3]:
-                    //Display employees by department
-                    newEmployee(function(res) {
+                    //Add a new employee
+                    employeeRoles(function(res) {
                         const rolesList = [];
                         const employeesList = [];
                         res.forEach(role => rolesList.push(`${role.id} ${role.title}`));
                         viewAllEmployees(function(res) {
                             res.forEach(employee => employeesList.push(`${employee.id}  ${employee.first_name} ${employee.last_name}`));
                             //Calling the function to add an employee
-                            console.log(employeesList);
                             addEmployee(rolesList, employeesList)
                         });
                     });
                     break;
                 case actionToDo[4]:
-                    removeEmployee();
+                    //Delete an employee
+                    viewAllEmployees(function(res) {
+                        const employeesList = [];
+                        res.forEach(employee => employeesList.push(`${employee.id}  ${employee.first_name} ${employee.last_name}`));
+                        //Calling the function to add an employee
+                        removeEmployee(employeesList);
+                    });
                     break;
                 case actionToDo[5]:
                     updateRole();
@@ -132,12 +137,13 @@ function manageEmployees() {
                 processResult(res)
             }
             if (process != true) {
-                //The return is used when adding a new employee to assign a manager
+                //The return is used when adding a new employee to select a manager among all all employees
                 return process(res)
             }
         });
     }
 
+    //This function allows the user to select a department and then view employees working in this department
     function employeesByDepartment(departmentsList) {;
         inquirer
             .prompt({
@@ -162,6 +168,7 @@ function manageEmployees() {
             });
     }
 
+    //This function allows the user to select a manager and then view employees in his/her teem.
     function employeesByManager(managersList) {;
         inquirer
             .prompt({
@@ -190,6 +197,7 @@ function manageEmployees() {
             });
     }
 
+    //This function allow the user to add an employee and assign role and manager
     function addEmployee(rolesList, employeesList) {;
         inquirer
             .prompt([{
@@ -236,6 +244,29 @@ function manageEmployees() {
                     //Processing the query response
                     console.log("-------------------------")
                     console.log(`Added employee: ${answer.first_name} ${answer.first_name} added. Position: ${answer.role.split(" ")[1]}`);
+                    manageEmployees();
+                })
+            });
+    }
+
+    //This function prompts the list of employee to remove the one the user  selects
+    function removeEmployee(employeesList) {;
+        inquirer
+            .prompt({
+                message: "Select the employee you would like to remove:",
+                name: "employee",
+                type: "list",
+                choices: employeesList
+            })
+            .then(async function(answer) {
+                const employee_id = answer.employee.split(" ")[0];
+                const selectedEmploye = answer.employee;
+                const query = `DELETE FROM employee WHERE id = '${employee_id}'`;
+                connection.query(query, function(err, res) {
+                    if (err) throw err;
+                    //Processing the query response
+                    console.log("-------------------------")
+                    console.log(`Removed employee: ${selectedEmploye}`);
                     manageEmployees();
                 })
             });
@@ -290,7 +321,7 @@ function manageEmployees() {
         });
     }
 
-    function newEmployee(getRole) {
+    function employeeRoles(getRole) {
         //Database query
         let query = "SELECT * FROM role";
         connection.query(query, function(err, res) {
