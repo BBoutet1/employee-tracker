@@ -43,7 +43,7 @@ function manageEmployees() {
             switch (answer.action) {
                 case actionToDo[0]:
                     //Display all employees
-                    viewAllEmployees();
+                    viewAllEmployees(true);
                     break;
 
                 case actionToDo[1]:
@@ -89,9 +89,15 @@ function manageEmployees() {
                     //Display employees by department
                     newEmployee(function(res) {
                         const rolesList = [];
+                        const employeesList = [];
                         res.forEach(role => rolesList.push(`${role.id}  ${role.title}`));
-                        //Calling the function to select the department and display employees
-                        addEmployee(rolesList)
+                        viewAllEmployees(function(res) {
+                            res.forEach(employee => employeesList.push(`${employee.id}  ${employee.first_name} ${employee.last_name}`));
+                            //Calling the function to add an employee
+                            console.log(employeesList);
+                            addEmployee(rolesList, employeesList)
+                        });
+
                     });
                     break;
                 case actionToDo[4]:
@@ -117,14 +123,21 @@ function manageEmployees() {
         });
 
     //This function query and print all employees data
-    function viewAllEmployees() {
+    function viewAllEmployees(process) {
         let query = "";
         //Preparing the query
         query = employeesQuery(query)
         connection.query(query, function(err, res) {
+            console.log("process " + process)
+            console.log(process != true)
             if (err) throw err;
-            //rocessing the the query response
-            processResult(res)
+            if (process) {
+                // processResult(res)
+            }
+            if (process != true) {
+                //The return is used when adding a new employee to assign a manager
+                return process(res)
+            }
         });
     }
 
@@ -180,7 +193,7 @@ function manageEmployees() {
             });
     }
 
-    function addEmployee(rolesList) {;
+    function addEmployee(rolesList, employeesList) {;
         inquirer
             .prompt([{
                 name: "first_name",
@@ -192,27 +205,43 @@ function manageEmployees() {
                 message: "Enter the employee last name:"
             }, {
                 message: "Choose the employee role:",
-                name: "manager",
+                name: "role",
                 type: "list",
                 choices: rolesList
+            }, {
+                message: "Would you like to assign a manager to the employee?",
+                name: "assign",
+                type: "confirm"
             }])
-            .then(function(answer) {
-                // let query = "";
-                // //Getting the manager employee id
-                // let managerId = answer.manager.split(" ")[0];
-                // //Query for all employees
-                // query = employeesQuery(query);
-                // //Adding the manager id filter in the query
-                // query += ` WHERE employee.manager_id = ${managerId}`
-                // connection.query(query, function(err, res) {
-                //     if (err) throw err;
-                //     //Processing the query response
-                //     res.forEach(employee => {
-                //         //Manager known
-                //         employee.manager = `${answer.manager.split(" ")[1]} ${answer.manager.split(" ")[2]}`;
-                //     })
-                //     processResult(res)
-                // });
+            .then(async function(answer) {
+                console.log(JSON.stringify(answer))
+
+                function getManager() {
+                    return inquirer
+                        .prompt({
+                            message: "Assign a manager to the new employee:",
+                            name: "manager",
+                            type: "list",
+                            choices: employeesList
+                        })
+                }
+                if (answer.assign) {
+                    const managerObject = await getManager();
+                    const assignedManager = managerObject.manager;
+                    const assignedRole = managerObject.manager
+                    answer.manager_id = assignedManager.split(" ")[0];;
+                    answer.role_id = assignedRole.split(" ")[0];;
+                } else {
+                    answer.manager_id = null;
+                }
+                console.log("assigned Manager" + answer.manager_id, answer.first_name, answer.last_name);
+                const query = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ('${answer.first_name}', '${answer.last_name}', '${answer.role_id}','${answer.manager_id}')`;
+                console.log(query);
+                connection.query(query, function(err, res) {
+                    if (err) throw err;
+                    //Processing the query response
+                    console.log("1 employee recoded");
+                })
             });
     }
 
