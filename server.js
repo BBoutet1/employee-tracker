@@ -32,6 +32,7 @@ actionToDo = ["View all employees", "View all employees by department",
 
 //Global functions to start prompts questions
 function manageEmployees() {
+    console.log("====================================")
     inquirer
         .prompt([{
             message: "What would you like to do?",
@@ -90,20 +91,18 @@ function manageEmployees() {
                     newEmployee(function(res) {
                         const rolesList = [];
                         const employeesList = [];
-                        res.forEach(role => rolesList.push(`${role.id}  ${role.title}`));
+                        res.forEach(role => rolesList.push(`${role.id} ${role.title}`));
                         viewAllEmployees(function(res) {
                             res.forEach(employee => employeesList.push(`${employee.id}  ${employee.first_name} ${employee.last_name}`));
                             //Calling the function to add an employee
                             console.log(employeesList);
                             addEmployee(rolesList, employeesList)
                         });
-
                     });
                     break;
                 case actionToDo[4]:
                     removeEmployee();
                     break;
-
                 case actionToDo[5]:
                     updateRole();
                     break;
@@ -128,11 +127,9 @@ function manageEmployees() {
         //Preparing the query
         query = employeesQuery(query)
         connection.query(query, function(err, res) {
-            console.log("process " + process)
-            console.log(process != true)
             if (err) throw err;
-            if (process) {
-                // processResult(res)
+            if (process == true) {
+                processResult(res)
             }
             if (process != true) {
                 //The return is used when adding a new employee to assign a manager
@@ -214,7 +211,7 @@ function manageEmployees() {
                 type: "confirm"
             }])
             .then(async function(answer) {
-                console.log(JSON.stringify(answer))
+                const role_id = answer.role.split(" ")[0];
 
                 function getManager() {
                     return inquirer
@@ -226,21 +223,20 @@ function manageEmployees() {
                         })
                 }
                 if (answer.assign) {
-                    const managerObject = await getManager();
-                    const assignedManager = managerObject.manager;
-                    const assignedRole = managerObject.manager
-                    answer.manager_id = assignedManager.split(" ")[0];;
-                    answer.role_id = assignedRole.split(" ")[0];;
+                    const selectedManager = await getManager();
+                    const assignedManager = selectedManager.manager;
+                    answer.manager_id = assignedManager.split(" ")[0];
                 } else {
                     answer.manager_id = null;
                 }
-                console.log("assigned Manager" + answer.manager_id, answer.first_name, answer.last_name);
-                const query = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ('${answer.first_name}', '${answer.last_name}', '${answer.role_id}','${answer.manager_id}')`;
-                console.log(query);
+                console.log("assigned Role" + answer.role);
+                const query = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ('${answer.first_name}', '${answer.last_name}', '${role_id}','${answer.manager_id}')`;
                 connection.query(query, function(err, res) {
                     if (err) throw err;
                     //Processing the query response
-                    console.log("1 employee recoded");
+                    console.log("-------------------------")
+                    console.log(`Added employee: ${answer.first_name} ${answer.first_name} added. Position: ${answer.role.split(" ")[1]}`);
+                    manageEmployees();
                 })
             });
     }
