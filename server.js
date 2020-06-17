@@ -26,7 +26,7 @@ connection.connect(function(err) {
 
 // Answers to the first inquirer question
 actionToDo = ["View all employees", "View all employees by department",
-    "View all employees by manager", "Add employee", "Remove employee",
+    "View all employees by manager", "Add a new employee", "Remove employee",
     "Update employee role", "Update employee Manager", "Add role", "Add department", "Exit prompt",
 ];
 
@@ -109,15 +109,27 @@ function manageEmployees() {
                     });
                     break;
                 case actionToDo[5]:
-                    updateRole();
+                    //Add a new employee
+                    employeeRoles(function(res) {
+                        const rolesList = [];
+                        const employeesList = [];
+                        const roleIdColumn = []; // Saving employees role_id column in separate array(not displayd in selection list)
+                        res.forEach(role => rolesList.push(`${role.id} ${role.title}`));
+                        viewAllEmployees(function(res) {
+                            res.forEach(employee => employeesList.push(`${employee.id}  ${employee.first_name} ${employee.last_name}`));
+                            res.forEach(employee => roleIdColumn.push(`${employee.role_id} `));
+                            //Calling the function to add an employee
+                            updateRole(rolesList, employeesList, roleIdColumn)
+                        });
+                    });
                     break;
                 case actionToDo[6]:
-                    updateRole();
+                    updateDepartment();
                     break;
-                case actionToDo[6]:
+                case actionToDo[7]:
                     addRole();
                     break;
-                case actionToDo[6]:
+                case actionToDo[8]:
                     addDepartment();
                     break;
                 case actionToDo[7]:
@@ -267,6 +279,44 @@ function manageEmployees() {
                     //Processing the query response
                     console.log("-------------------------")
                     console.log(`Removed employee: ${selectedEmploye}`);
+                    manageEmployees();
+                })
+            });
+    }
+
+    //This function allow the user to add an employee and assign role and manager
+    function updateRole(rolesList, employeesList, roleIdColumn) {;
+        inquirer
+            .prompt({
+                message: "Select the employee you would like to update his role:",
+                name: "employee",
+                type: "list",
+                choices: employeesList
+            })
+            .then(async function(answer) {
+                const employee = answer.employee;
+                const employee_id = answer.employee.split(" ")[0];
+                const ArrayIndex = employeesList.indexOf(answer.employee);
+                const roleID = roleIdColumn[ArrayIndex]
+
+                function getRole() {
+                    return inquirer
+                        .prompt({
+                            message: "Select the employee new role:",
+                            name: "role",
+                            type: "list",
+                            choices: rolesList
+                        })
+                }
+                const selectedRole = await getRole();
+                const assignedRole = selectedRole.role;
+                answer.role_id = assignedRole.split(" ")[0];
+                const query = `UPDATE employee SET role_id = '${answer.role_id}' WHERE role_id ='${roleID}'`;
+                connection.query(query, function(err, res) {
+                    if (err) throw err;
+                    //Processing the query response
+                    console.log("-------------------------")
+                    console.log(`Update role for employee: ${employee}. New position: ${assignedRole.split(" ")[1]}`);
                     manageEmployees();
                 })
             });
