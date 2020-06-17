@@ -63,14 +63,7 @@ function manageEmployees() {
                         let managerIDs = []; // manager ID for each employee
                         let query = "";
                         res.forEach(employee => { managerIDs.push(employee.manager_id) });
-                        query = "SELECT * FROM employee"
-                        managerIDs.forEach(id => {
-                            let addManager = " WHERE employee.id = " + id;;
-                            if (managerIDs.indexOf(id) != 0) {
-                                addManager = " AND WHERE employee.id = " + id;
-                            }
-                        });
-                        query += " ORDER BY employee.id";
+                        query = "SELECT * FROM employee ORDER BY employee.id"
                         connection.query(query, function(err, resp) {
                             if (err) throw err;
                             const managersList = [];
@@ -113,13 +106,11 @@ function manageEmployees() {
                     employeeRoles(function(res) {
                         const rolesList = [];
                         const employeesList = [];
-                        const roleIdColumn = []; // Saving employees role_id column in separate array(not displayd in selection list)
                         res.forEach(role => rolesList.push(`${role.id} ${role.title}`));
                         viewAllEmployees(function(res) {
                             res.forEach(employee => employeesList.push(`${employee.id}  ${employee.first_name} ${employee.last_name}`));
-                            res.forEach(employee => roleIdColumn.push(`${employee.role_id}`));
                             //Calling the function to add an employee
-                            updateRole(rolesList, employeesList, roleIdColumn)
+                            updateRole(rolesList, employeesList)
                         });
                     });
                     break;
@@ -133,7 +124,12 @@ function manageEmployees() {
                     });
                     break;
                 case actionToDo[7]:
-                    addRole();
+                    viewEmployeesBy("department", function(res) {
+                        const departmentsList = [];
+                        res.forEach(department => departmentsList.push(`${department.id}  ${department.name}`));
+                        //Calling the function to select the department and display employees
+                        addRole(departmentsList)
+                    });
                     break;
                 case actionToDo[8]:
                     addDepartment();
@@ -291,7 +287,7 @@ function manageEmployees() {
     }
 
     //This function allow the user to update the employee role
-    function updateRole(rolesList, employeesList, roleIdColumn) {
+    function updateRole(rolesList, employeesList) {
         inquirer
             .prompt({
                 message: "Select the employee you would like to update his role:",
@@ -301,8 +297,7 @@ function manageEmployees() {
             })
             .then(async function(answer) {
                 const employee = answer.employee;
-                const ArrayIndex = employeesList.indexOf(answer.employee);
-                const roleID = roleIdColumn[ArrayIndex] // retrieving the selected employee role id
+                const employeeID = employee.split(" ")[0];;
 
                 function getRole() {
                     return inquirer
@@ -316,18 +311,18 @@ function manageEmployees() {
                 const selectedRole = await getRole();
                 const assignedRole = selectedRole.role;
                 answer.role_id = assignedRole.split(" ")[0];
-                const query = `UPDATE employee SET role_id = '${answer.role_id}' WHERE role_id ='${roleID}'`;
+                const query = `UPDATE employee SET role_id = '${answer.role_id}' WHERE id ='${employeeID}'`;
                 connection.query(query, function(err, res) {
                     if (err) throw err;
                     //Processing the query response
                     console.log("-------------------------")
-                    console.log(`Update role for employee: ${employee}. New position: ${assignedRole}`);
+                    console.log(`Update role for employee ${employee}. New position: ${assignedRole}`);
                     manageEmployees();
                 })
             });
     }
 
-    //This function allow the user to update the employee manager
+    //This function allows the user to update the employee manager
     function updateManager(employeesList) {;
         inquirer
             .prompt({
@@ -339,17 +334,18 @@ function manageEmployees() {
             .then(async function(answer) {
                 const employee = answer.employee;
                 const employeeID = employee.split(" ")[0];
-                // Any employee can be the selected employee manager except himself
-                const ArrayIndex = employeesList.indexOf(employee);
-                const potentialManagers = employeesList.slice(ArrayIndex);
 
+                //This function allow the user to choose a manager for the selected employee
                 function getManager() {
+                    // An employee can't be a manager of himself
+                    const ArrayIndex = employeesList.indexOf(employee);
+                    employeesList.splice(ArrayIndex, 1);
                     return inquirer
                         .prompt({
                             message: `Assign a new manager to ${employee.split(" ")[1]} ${employee.split(" ")[2]}:`,
                             name: "manager",
                             type: "list",
-                            choices: potentialManagers
+                            choices: employeesList
                         })
                 }
                 const selected = await getManager();
@@ -364,7 +360,38 @@ function manageEmployees() {
                     manageEmployees();
                 })
             });
-    }
+    };
+
+    //This function  the user to add a new role
+    function addRole(departmentsList) {
+        inquirer
+            .prompt([{
+                message: "What is the title of the role you want to add?",
+                name: "title",
+                type: "input"
+            }, {
+                message: "What is the salary for this position?",
+                name: "salary",
+                type: "input"
+            }, {
+                message: "Select the department for this role:",
+                name: "department",
+                type: "list",
+                choices: departmentsList
+            }])
+            .then(function(answer) {
+                const departmentID = answer.department.split(" ")[0];
+                const query = `INSERT INTO role (title, salary, department_id) VALUES ('${answer.title}', '${answer.salary}', '${departmentID}')`;
+                connection.query(query, function(err, res) {
+                    if (err) throw err;
+                    //Printing the new role
+                    console.log("-------------------------")
+                    console.log(JSON.stringify(res))
+                    console.log(`New role added id: ${res.insertId}, title: ${answer.title}`);
+                    manageEmployees();
+                })
+            });
+    };
 
     //This function prepare and return the sql database query for all employees data
     function employeesQuery(query) {
