@@ -12,7 +12,7 @@ A solution for managing a company's employees using node, inquirer, and MySQL.
 * [Usage](#usage)
 * [Licence](#licence)
 * [Contributing](#contributing)
-* [Questiions](#questions)
+* [Questions](#questions)
 * [Author information](#author-information)
 
 </details>
