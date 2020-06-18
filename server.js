@@ -27,7 +27,7 @@ connection.connect(function(err) {
 // Answers to the first inquirer question
 actionToDo = ["View all employees", "View all employees by department",
     "View all employees by manager", "Add a new employee", "Remove employee",
-    "Update employee role", "Update employee Manager", "Add new role", "Add new department", "Exit prompt",
+    "Update employee role", "Update employee Manager", "Add new role", "Add new department", "View department salary budget", "Exit prompt",
 ];
 
 //Global functions to start prompts
@@ -135,7 +135,17 @@ function manageEmployees() {
                     //Ading a new department
                     addDepartment();
                     break;
-                case actionToDo[7]:
+                case actionToDo[9]:
+                    //Total Department budget
+                    //Viewing employees by department
+                    viewEmployeesBy("department", function(res) {
+                        const departmentsList = []; // Departments array
+                        res.forEach(department => departmentsList.push(`${department.id}  ${department.name}`));
+                        //Calling the function to select the department print budget
+                        departmentBudget(departmentsList);
+                    });
+                    break;
+                case actionToDo[10]:
                     connection.end();
                     return
             }
@@ -413,6 +423,30 @@ function manageEmployees() {
             });
     };
 
+    function departmentBudget(departmentsList) {
+        inquirer
+            .prompt({
+                message: "Which department salary budget would do like to see?",
+                name: "department",
+                type: "list",
+                choices: departmentsList
+            })
+            .then(function(answer) {
+                let query = "";
+                let departmentId = 1;
+                //Preparing the query
+                query = employeesQuery(query);
+                //Filtering the department team
+                departmentId += departmentsList.indexOf(answer.department);
+                query += ` WHERE department.id = ${departmentId}`
+                connection.query(query, function(err, res) {
+                    if (err) throw err;
+                    //Processing the the query response
+                    processResult(res, true)
+                });
+            });
+    }
+
     //This function prepare and return the sql database query for all employees data
     function employeesQuery(query) {
         query = "SELECT employee.*, role.title AS role, department.name AS department, role.salary FROM employee ";
@@ -421,11 +455,15 @@ function manageEmployees() {
     }
 
     //This function make the sql database query and process the response
-    function processResult(res) {
-        //For each employee, loop to find the manager (the one the manager id belong to)
+    function processResult(res, budget) {
+        let departmentBudget = 0; //Total of all salaries
+        //For each employee, loop to find his manager (the one the manager id belong to)
+        //And add the salary to the budget
         res.forEach(element => {
             res.forEach(elmt => {
-                if (element.manager_id == elmt.id) {
+
+                //Adding manager name column(except when viewing department buget)
+                if (element.manager_id == elmt.id && budget != true) {
                     //Manager found
                     element.manager = `${elmt.first_name} ${elmt.last_name}`;
                 }
@@ -435,11 +473,15 @@ function manageEmployees() {
         //This function print employees data
         setTimeout(function printEmployeesData() {
             res.forEach(employee => {
-                delete employee.manager_id; // no more needed when manager found
+                delete employee.manager_id; // not needed in the printed table
                 delete employee.role_id;
+                departmentBudget += employee.salary;
             });
             console.log("-----------------------------------------------------------------------------");
             console.table(res);
+            if (budget = true) {
+                console.log(`Total salary budget: ------->> ${departmentBudget} <<--------`)
+            }
             manageEmployees();
         }, 300)
 
