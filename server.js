@@ -27,7 +27,7 @@ connection.connect(function(err) {
 // Answers to the first inquirer question
 actionToDo = ["View all employees", "View all employees by department",
     "View all employees by manager", "Add a new employee", "Remove employee",
-    "Update employee role", "Update employee Manager", "Add role", "Add department", "Exit prompt",
+    "Update employee role", "Update employee Manager", "Add new role", "Add new department", "Exit prompt",
 ];
 
 //Global functions to start prompts questions
@@ -244,15 +244,15 @@ function manageEmployees() {
                             choices: employeesList
                         })
                 }
-                if (answer.assign) {
+                let query = "";
+                if (answer.assign === true) {
                     const selectedManager = await getManager();
                     const assignedManager = selectedManager.manager;
                     answer.manager_id = assignedManager.split(" ")[0];
+                    query = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ('${answer.first_name}', '${answer.last_name}', '${role_id}','${answer.manager_id}')`;
                 } else {
-                    answer.manager_id = null;
+                    query = `INSERT INTO employee (first_name, last_name, role_id) VALUES ('${answer.first_name}', '${answer.last_name}', '${role_id}')`;
                 }
-                console.log("assigned Role" + answer.role);
-                const query = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ('${answer.first_name}', '${answer.last_name}', '${role_id}','${answer.manager_id}')`;
                 connection.query(query, function(err, res) {
                     if (err) throw err;
                     //Processing the query response
@@ -362,7 +362,7 @@ function manageEmployees() {
             });
     };
 
-    //This function  the user to add a new role
+    //This function allows the user to add a new role
     function addRole(departmentsList) {
         inquirer
             .prompt([{
@@ -386,8 +386,27 @@ function manageEmployees() {
                     if (err) throw err;
                     //Printing the new role
                     console.log("-------------------------")
-                    console.log(JSON.stringify(res))
                     console.log(`New role added id: ${res.insertId}, title: ${answer.title}`);
+                    manageEmployees();
+                })
+            });
+    };
+
+    // This function allows the user to add a new department
+    function addDepartment() {
+        inquirer
+            .prompt([{
+                message: "What is the name of the department you want to add?",
+                name: "department",
+                type: "input"
+            }])
+            .then(function(answer) {
+                const query = `INSERT INTO department (name) VALUES ('${answer.department}')`;
+                connection.query(query, function(err, res) {
+                    if (err) throw err;
+                    //Printing the new role
+                    console.log("-------------------------")
+                    console.log(`New department added id: ${res.insertId}, name: ${answer.department}`);
                     manageEmployees();
                 })
             });
