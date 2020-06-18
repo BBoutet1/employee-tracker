@@ -30,7 +30,7 @@ actionToDo = ["View all employees", "View all employees by department",
     "Update employee role", "Update employee Manager", "Add new role", "Add new department", "Exit prompt",
 ];
 
-//Global functions to start prompts questions
+//Global functions to start prompts
 function manageEmployees() {
     console.log("====================================")
     inquirer
@@ -43,30 +43,29 @@ function manageEmployees() {
         .then(function(answer) {
             switch (answer.action) {
                 case actionToDo[0]:
-                    //Display all employees
+                    //Viewing all employees
                     viewAllEmployees(true);
                     break;
 
                 case actionToDo[1]:
-                    //Display employees by department
+                    //Viewing employees by department
                     viewEmployeesBy("department", function(res) {
-                        const departmentsList = [];
+                        const departmentsList = []; // Departments array
                         res.forEach(department => departmentsList.push(`${department.id}  ${department.name}`));
                         //Calling the function to select the department and display employees
                         employeesByDepartment(departmentsList)
                     });
                     break;
-
                 case actionToDo[2]:
-                    //Display employees by manager
+                    //Viewing employees by manager
                     viewEmployeesBy("manager", function(res) {
-                        let managerIDs = []; // manager ID for each employee
-                        let query = "";
+                        let managerIDs = []; // manager IDs array retrived from employee table
+                        let query = ""; // query to retrieve all employees
                         res.forEach(employee => { managerIDs.push(employee.manager_id) });
                         query = "SELECT * FROM employee ORDER BY employee.id"
                         connection.query(query, function(err, resp) {
                             if (err) throw err;
-                            const managersList = [];
+                            const managersList = []; // list of employees managing (managers)
                             resp.forEach(employee => {
                                 managerIDs.forEach(id => {
                                     if (employee.id == id) {
@@ -74,20 +73,20 @@ function manageEmployees() {
                                     }
                                 })
                             });
-                            //Calling the function to select the manager and display employees
+                            //Calling the function to select the manager and display employees in his team
                             employeesByManager(managersList)
                         });
                     });
                     break;
                 case actionToDo[3]:
-                    //Add a new employee
+                    //Adding a new employee
                     employeeRoles(function(res) {
                         const rolesList = [];
                         const employeesList = [];
                         res.forEach(role => rolesList.push(`${role.id} ${role.title}`));
                         viewAllEmployees(function(res) {
                             res.forEach(employee => employeesList.push(`${employee.id}  ${employee.first_name} ${employee.last_name}`));
-                            //Calling the function to add an employee
+                            //Calling the function to add an employee with role and department
                             addEmployee(rolesList, employeesList)
                         });
                     });
@@ -109,7 +108,7 @@ function manageEmployees() {
                         res.forEach(role => rolesList.push(`${role.id} ${role.title}`));
                         viewAllEmployees(function(res) {
                             res.forEach(employee => employeesList.push(`${employee.id}  ${employee.first_name} ${employee.last_name}`));
-                            //Calling the function to add an employee
+                            //Calling the function to update employee role
                             updateRole(rolesList, employeesList)
                         });
                     });
@@ -119,19 +118,21 @@ function manageEmployees() {
                     viewAllEmployees(function(res) {
                         const employeesList = [];
                         res.forEach(employee => employeesList.push(`${employee.id} ${employee.first_name} ${employee.last_name}`));
-                        //Calling the function to add an employee
+                        //Calling the function to update employee manager
                         updateManager(employeesList)
                     });
                     break;
                 case actionToDo[7]:
+                    //Adding a new role
                     viewEmployeesBy("department", function(res) {
                         const departmentsList = [];
                         res.forEach(department => departmentsList.push(`${department.id}  ${department.name}`));
-                        //Calling the function to select the department and display employees
+                        //Calling the function to add a new role
                         addRole(departmentsList)
                     });
                     break;
                 case actionToDo[8]:
+                    //Ading a new department
                     addDepartment();
                     break;
                 case actionToDo[7]:
