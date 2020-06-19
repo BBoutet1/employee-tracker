@@ -1,26 +1,27 @@
 {
-  "name": "employee-tracker",
-  "version": "1.0.0",
-  "description": "A solution for managing a company's employees using node, inquirer, and MySQL.",
-  "main": "server.js",
-  "dependencies": {
-    "console.table": "^0.10.0",
-    "inquirer": "^7.1.0",
-    "mysql": "^2.18.1"
-  },
-  "devDependencies": {},
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/BBoutet1/employee-tracker.git"
-  },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/BBoutet1/employee-tracker/issues"
-  },
-  "homepage": "https://github.com/BBoutet1/employee-tracker#readme"
+    "name": "employee-tracker",
+    "version": "1.0.0",
+    "description": "A solution for managing a company's employees using node, inquirer, and MySQL.",
+    "main": "server.js",
+    "dependencies": {
+        "chalk": "^4.1.0",
+        "console.table": "^0.10.0",
+        "inquirer": "^7.1.0",
+        "mysql": "^2.18.1"
+    },
+    "devDependencies": {},
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "node server.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/BBoutet1/employee-tracker.git"
+    },
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/BBoutet1/employee-tracker/issues"
+    },
+    "homepage": "https://github.com/BBoutet1/employee-tracker#readme"
 }

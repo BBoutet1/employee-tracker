@@ -1,7 +1,9 @@
 //npm modules
-let mysql = require("mysql");
-let inquirer = require("inquirer");
-let consoleTable = require("console.table");
+const mysql = require("mysql");
+const inquirer = require("inquirer");
+const figlet = require("figlet");
+const chalk = require("chalk");
+const consoleTable = require("console.table");
 
 let connection = mysql.createConnection({
     host: "localhost",
@@ -20,8 +22,13 @@ let connection = mysql.createConnection({
 //Connection to sql database
 connection.connect(function(err) {
     if (err) throw err;
+
+    //Printing the app name
+    figlet("EMPLOYEE MANAGER", function(err, data) {
+        console.log(chalk.green(data));
+    });
     //Calling the inquirers functions
-    manageEmployees();
+    setTimeout(manageEmployees, 100)
 });
 
 // Answers to the first inquirer question
