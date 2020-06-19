@@ -488,7 +488,7 @@ function manageEmployees() {
             console.table(res);
             if (budget == true) {
 
-                console.log(chalk.yellow(`Total salary budget: --------------------------------->> ${departmentBudget} <<--------`));
+                console.log(chalk.yellow(`Total salary budget: --------------------------------->> ${departmentBudget} <<----`));
             }
             manageEmployees();
         }, 300)
