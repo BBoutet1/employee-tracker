@@ -24,7 +24,7 @@ connection.connect(function(err) {
     if (err) throw err;
 
     //Printing the app name
-    figlet("EMPLOYEE MANAGER", function(err, data) {
+    figlet("EMPLOYEE  MANAGER", function(err, data) {
         console.log(chalk.green(data));
     });
     //Calling the inquirers functions
@@ -39,7 +39,7 @@ actionToDo = ["View all employees", "View all employees by department",
 
 //Global functions to start prompts
 function manageEmployees() {
-    console.log("====================================")
+    console.log("=======================================================================")
     inquirer
         .prompt([{
             message: "What would you like to do?",
@@ -486,8 +486,9 @@ function manageEmployees() {
             });
             console.log("-----------------------------------------------------------------------------");
             console.table(res);
-            if (budget = true) {
-                console.log(`Total salary budget: ------->> ${departmentBudget} <<--------`)
+            if (budget == true) {
+
+                console.log(chalk.yellow(`Total salary budget: --------------------------------->> ${departmentBudget} <<--------`));
             }
             manageEmployees();
         }, 300)
